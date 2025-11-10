@@ -1,29 +1,62 @@
 <?php
+// Iniciar buffer de salida para capturar cualquier error
+ob_start();
+
+// Verificar que es una petición POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: /');
+    exit;
+}
+
 $config = require __DIR__ . '/config.php';
 
 // Validar que la configuración esté completa
 if (empty($config['api_url']) || empty($config['api_key']) || empty($config['internal_id'])) {
-    die(json_encode([
-        'success' => false,
-        'error' => 'Error de configuración: Faltan variables de entorno. Verifique MERCATELY_API_URL, MERCATELY_API_KEY y MERCATELY_INTERNAL_ID en Vercel'
-    ]));
+    $errorMessage = 'Error de configuración: Faltan variables de entorno. Verifique MERCATELY_API_URL, MERCATELY_API_KEY y MERCATELY_INTERNAL_ID en Vercel';
+    $showError = true;
+    $httpCode = 0;
+    $response = '';
+    $curlError = $errorMessage;
+    $data = [];
+    $fullPhone = '';
+    $curlInfo = [];
+    $responseData = null;
+    $responseMessage = '';
+    $isSuccess = false;
+    goto render_page;
 }
 
 // Validar que se recibió el número de teléfono
 if (!isset($_POST['phone_number']) || empty(trim($_POST['phone_number']))) {
-    die(json_encode([
-        'success' => false,
-        'error' => 'El número de teléfono es requerido'
-    ]));
+    $errorMessage = 'El número de teléfono es requerido';
+    $showError = true;
+    $httpCode = 0;
+    $response = '';
+    $curlError = $errorMessage;
+    $data = [];
+    $fullPhone = '';
+    $curlInfo = [];
+    $responseData = null;
+    $responseMessage = '';
+    $isSuccess = false;
+    goto render_page;
 }
 
 // Limpiar número y validar formato
 $phone = preg_replace('/\D/', '', $_POST['phone_number']);
 if (strlen($phone) !== 10) {
-    die(json_encode([
-        'success' => false,
-        'error' => 'El número debe tener exactamente 10 dígitos'
-    ]));
+    $errorMessage = 'El número debe tener exactamente 10 dígitos';
+    $showError = true;
+    $httpCode = 0;
+    $response = '';
+    $curlError = $errorMessage;
+    $data = [];
+    $fullPhone = '';
+    $curlInfo = [];
+    $responseData = null;
+    $responseMessage = '';
+    $isSuccess = false;
+    goto render_page;
 }
 
 // Agregar prefijo de México (521)
@@ -32,30 +65,61 @@ $fullPhone = '521' . $phone;
 // Validar y recopilar parámetros de plantilla en el orden correcto
 $templateParams = [];
 
+// Inicializar variables
+$showError = false;
+$errorMessage = '';
+
 if (!isset($_POST['patient_name']) || empty(trim($_POST['patient_name']))) {
-    die(json_encode(['success' => false, 'error' => 'El nombre del paciente es requerido']));
+    $errorMessage = 'El nombre del paciente es requerido';
+    $showError = true;
+    goto prepare_error;
 }
 $templateParams[] = trim($_POST['patient_name']);
 
 if (!isset($_POST['doctor_name']) || empty(trim($_POST['doctor_name']))) {
-    die(json_encode(['success' => false, 'error' => 'El nombre del doctor es requerido']));
+    $errorMessage = 'El nombre del doctor es requerido';
+    $showError = true;
+    goto prepare_error;
 }
 $templateParams[] = trim($_POST['doctor_name']);
 
 if (!isset($_POST['appointment_date']) || empty(trim($_POST['appointment_date']))) {
-    die(json_encode(['success' => false, 'error' => 'La fecha de la cita es requerida']));
+    $errorMessage = 'La fecha de la cita es requerida';
+    $showError = true;
+    goto prepare_error;
 }
 $templateParams[] = trim($_POST['appointment_date']);
 
 if (!isset($_POST['appointment_time']) || empty(trim($_POST['appointment_time']))) {
-    die(json_encode(['success' => false, 'error' => 'La hora de la cita es requerida']));
+    $errorMessage = 'La hora de la cita es requerida';
+    $showError = true;
+    goto prepare_error;
 }
 $templateParams[] = trim($_POST['appointment_time']);
 
 if (!isset($_POST['consultory_number']) || empty(trim($_POST['consultory_number']))) {
-    die(json_encode(['success' => false, 'error' => 'El número de consultorio es requerido']));
+    $errorMessage = 'El número de consultorio es requerido';
+    $showError = true;
+    goto prepare_error;
 }
 $templateParams[] = trim($_POST['consultory_number']);
+
+// Si llegamos aquí, continuar con el envío
+goto send_request;
+
+prepare_error:
+    $httpCode = 0;
+    $response = '';
+    $curlError = $errorMessage;
+    $data = [];
+    $fullPhone = '521' . $phone;
+    $curlInfo = [];
+    $responseData = null;
+    $responseMessage = '';
+    $isSuccess = false;
+    goto render_page;
+
+send_request:
 
 // Construir estructura de datos EXACTAMENTE igual que test_connection.php
 $data = [
@@ -115,6 +179,9 @@ if ($httpCode >= 200 && $httpCode < 300 && empty($curlError)) {
     $isSuccess = false;
 }
 
+render_page:
+// Limpiar cualquier salida previa
+ob_clean();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -206,7 +273,7 @@ if ($httpCode >= 200 && $httpCode < 300 && empty($curlError)) {
 <body>
   <div class="result-container">
     <div class="result-header">
-      <?php if ($isSuccess): ?>
+      <?php if ($isSuccess && !$showError): ?>
         <div class="result-icon">✅</div>
         <h2 class="result-title success">Mensaje Enviado Correctamente</h2>
         <p class="result-message">La notificación de WhatsApp ha sido enviada exitosamente.</p>
@@ -217,9 +284,11 @@ if ($httpCode >= 200 && $httpCode < 300 && empty($curlError)) {
         <?php endif; ?>
       <?php else: ?>
         <div class="result-icon">❌</div>
-        <h2 class="result-title error">Error al Enviar Mensaje</h2>
+        <h2 class="result-title error"><?php echo $showError ? 'Error de Validación' : 'Error al Enviar Mensaje'; ?></h2>
         <p class="result-message">
-          <?php if ($curlError): ?>
+          <?php if ($showError && $errorMessage): ?>
+            <?php echo htmlspecialchars($errorMessage); ?>
+          <?php elseif ($curlError && $curlError !== 'Ninguno'): ?>
             Error de conexión: <?php echo htmlspecialchars($curlError); ?>
           <?php elseif ($httpCode > 0): ?>
             El servidor respondió con código HTTP <?php echo $httpCode; ?>
