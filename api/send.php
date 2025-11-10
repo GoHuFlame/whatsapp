@@ -1,8 +1,7 @@
 <?php
-// Desactivar output buffering para debugging
-if (ob_get_level()) {
-    ob_end_clean();
-}
+// Configurar para mostrar errores (solo para debugging)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 // Verificar que es una petición POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -132,6 +131,18 @@ try {
     $errorMessage = $e->getMessage();
     $showError = true;
     $isSuccess = false;
+} catch (Error $e) {
+    $errorMessage = 'Error fatal: ' . $e->getMessage();
+    $showError = true;
+    $isSuccess = false;
+}
+
+// Asegurar que siempre tengamos valores válidos
+if (!isset($config)) {
+    $config = ['api_url' => 'No configurada', 'api_key' => '', 'internal_id' => ''];
+}
+if (!isset($fullPhone) && isset($phone)) {
+    $fullPhone = '521' . $phone;
 }
 
 ?>
@@ -141,6 +152,7 @@ try {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resultado del Envío | Mercately</title>
+  <!-- Debug: Página cargada correctamente -->
   <link rel="stylesheet" href="/assets/css/style.css">
   <style>
     .result-container {
@@ -224,6 +236,13 @@ try {
 </head>
 <body>
   <div class="result-container">
+    <!-- Debug Info -->
+    <div style="background: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 5px; font-size: 12px;">
+      <strong>Debug:</strong> POST recibido: <?php echo !empty($_POST) ? 'Sí' : 'No'; ?> | 
+      Método: <?php echo $_SERVER['REQUEST_METHOD']; ?> | 
+      Variables POST: <?php echo count($_POST); ?>
+    </div>
+    
     <div class="result-header">
       <?php if ($isSuccess && !$showError): ?>
         <div class="result-icon">✅</div>
