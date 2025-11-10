@@ -1,6 +1,8 @@
 <?php
-// Iniciar buffer de salida para capturar cualquier error
-ob_start();
+// Desactivar output buffering para debugging
+if (ob_get_level()) {
+    ob_end_clean();
+}
 
 // Verificar que es una petición POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -8,180 +10,130 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$config = require __DIR__ . '/config.php';
-
-// Validar que la configuración esté completa
-if (empty($config['api_url']) || empty($config['api_key']) || empty($config['internal_id'])) {
-    $errorMessage = 'Error de configuración: Faltan variables de entorno. Verifique MERCATELY_API_URL, MERCATELY_API_KEY y MERCATELY_INTERNAL_ID en Vercel';
-    $showError = true;
-    $httpCode = 0;
-    $response = '';
-    $curlError = $errorMessage;
-    $data = [];
-    $fullPhone = '';
-    $curlInfo = [];
-    $responseData = null;
-    $responseMessage = '';
-    $isSuccess = false;
-    goto render_page;
-}
-
-// Validar que se recibió el número de teléfono
-if (!isset($_POST['phone_number']) || empty(trim($_POST['phone_number']))) {
-    $errorMessage = 'El número de teléfono es requerido';
-    $showError = true;
-    $httpCode = 0;
-    $response = '';
-    $curlError = $errorMessage;
-    $data = [];
-    $fullPhone = '';
-    $curlInfo = [];
-    $responseData = null;
-    $responseMessage = '';
-    $isSuccess = false;
-    goto render_page;
-}
-
-// Limpiar número y validar formato
-$phone = preg_replace('/\D/', '', $_POST['phone_number']);
-if (strlen($phone) !== 10) {
-    $errorMessage = 'El número debe tener exactamente 10 dígitos';
-    $showError = true;
-    $httpCode = 0;
-    $response = '';
-    $curlError = $errorMessage;
-    $data = [];
-    $fullPhone = '';
-    $curlInfo = [];
-    $responseData = null;
-    $responseMessage = '';
-    $isSuccess = false;
-    goto render_page;
-}
-
-// Agregar prefijo de México (521)
-$fullPhone = '521' . $phone;
-
-// Validar y recopilar parámetros de plantilla en el orden correcto
-$templateParams = [];
-
-// Inicializar variables
-$showError = false;
+// Inicializar todas las variables primero
+$config = null;
 $errorMessage = '';
-
-if (!isset($_POST['patient_name']) || empty(trim($_POST['patient_name']))) {
-    $errorMessage = 'El nombre del paciente es requerido';
-    $showError = true;
-    goto prepare_error;
-}
-$templateParams[] = trim($_POST['patient_name']);
-
-if (!isset($_POST['doctor_name']) || empty(trim($_POST['doctor_name']))) {
-    $errorMessage = 'El nombre del doctor es requerido';
-    $showError = true;
-    goto prepare_error;
-}
-$templateParams[] = trim($_POST['doctor_name']);
-
-if (!isset($_POST['appointment_date']) || empty(trim($_POST['appointment_date']))) {
-    $errorMessage = 'La fecha de la cita es requerida';
-    $showError = true;
-    goto prepare_error;
-}
-$templateParams[] = trim($_POST['appointment_date']);
-
-if (!isset($_POST['appointment_time']) || empty(trim($_POST['appointment_time']))) {
-    $errorMessage = 'La hora de la cita es requerida';
-    $showError = true;
-    goto prepare_error;
-}
-$templateParams[] = trim($_POST['appointment_time']);
-
-if (!isset($_POST['consultory_number']) || empty(trim($_POST['consultory_number']))) {
-    $errorMessage = 'El número de consultorio es requerido';
-    $showError = true;
-    goto prepare_error;
-}
-$templateParams[] = trim($_POST['consultory_number']);
-
-// Si llegamos aquí, continuar con el envío
-goto send_request;
-
-prepare_error:
-    $httpCode = 0;
-    $response = '';
-    $curlError = $errorMessage;
-    $data = [];
-    $fullPhone = '521' . $phone;
-    $curlInfo = [];
-    $responseData = null;
-    $responseMessage = '';
-    $isSuccess = false;
-    goto render_page;
-
-send_request:
-
-// Construir estructura de datos EXACTAMENTE igual que test_connection.php
-$data = [
-    "phone_number" => $fullPhone,
-    "internal_id" => $config['internal_id'],
-    "template_params" => $templateParams
-];
-
-// Enviar petición - configuración idéntica a test_connection.php
-$ch = curl_init($config['api_url']);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    'Content-Type: application/json',
-    'api-key: ' . $config['api_key'],
-    'Accept: application/json'
-]);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 20);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$curlError = curl_error($ch);
-$curlInfo = curl_getinfo($ch);
-curl_close($ch);
-
-// Parsear respuesta JSON si existe
+$showError = false;
+$httpCode = 0;
+$response = '';
+$curlError = '';
+$data = [];
+$fullPhone = '';
+$curlInfo = [];
 $responseData = null;
 $responseMessage = '';
 $isSuccess = false;
+$phone = '';
 
-if ($response) {
-    $responseData = json_decode($response, true);
-    if (json_last_error() === JSON_ERROR_NONE && is_array($responseData)) {
-        // La respuesta es JSON válido
-        if (isset($responseData['message'])) {
-            $responseMessage = $responseData['message'];
-        }
-        if (isset($responseData['info'])) {
-            $responseMessage .= ' | Info: ' . json_encode($responseData['info']);
+try {
+    $config = require __DIR__ . '/config.php';
+    
+    // Validar que la configuración esté completa
+    if (empty($config['api_url']) || empty($config['api_key']) || empty($config['internal_id'])) {
+        throw new Exception('Error de configuración: Faltan variables de entorno. Verifique MERCATELY_API_URL, MERCATELY_API_KEY y MERCATELY_INTERNAL_ID en Vercel');
+    }
+    
+    // Validar que se recibió el número de teléfono
+    if (!isset($_POST['phone_number']) || empty(trim($_POST['phone_number']))) {
+        throw new Exception('El número de teléfono es requerido');
+    }
+    
+    // Limpiar número y validar formato
+    $phone = preg_replace('/\D/', '', $_POST['phone_number']);
+    if (strlen($phone) !== 10) {
+        throw new Exception('El número debe tener exactamente 10 dígitos');
+    }
+    
+    // Agregar prefijo de México (521)
+    $fullPhone = '521' . $phone;
+    
+    // Validar y recopilar parámetros de plantilla
+    $templateParams = [];
+    
+    if (!isset($_POST['patient_name']) || empty(trim($_POST['patient_name']))) {
+        throw new Exception('El nombre del paciente es requerido');
+    }
+    $templateParams[] = trim($_POST['patient_name']);
+    
+    if (!isset($_POST['doctor_name']) || empty(trim($_POST['doctor_name']))) {
+        throw new Exception('El nombre del doctor es requerido');
+    }
+    $templateParams[] = trim($_POST['doctor_name']);
+    
+    if (!isset($_POST['appointment_date']) || empty(trim($_POST['appointment_date']))) {
+        throw new Exception('La fecha de la cita es requerida');
+    }
+    $templateParams[] = trim($_POST['appointment_date']);
+    
+    if (!isset($_POST['appointment_time']) || empty(trim($_POST['appointment_time']))) {
+        throw new Exception('La hora de la cita es requerida');
+    }
+    $templateParams[] = trim($_POST['appointment_time']);
+    
+    if (!isset($_POST['consultory_number']) || empty(trim($_POST['consultory_number']))) {
+        throw new Exception('El número de consultorio es requerido');
+    }
+    $templateParams[] = trim($_POST['consultory_number']);
+    
+    // Construir estructura de datos EXACTAMENTE igual que test_connection.php
+    $data = [
+        "phone_number" => $fullPhone,
+        "internal_id" => $config['internal_id'],
+        "template_params" => $templateParams
+    ];
+    
+    // Enviar petición - configuración idéntica a test_connection.php
+    $ch = curl_init($config['api_url']);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'api-key: ' . $config['api_key'],
+        'Accept: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 20);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+    curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    $curlInfo = curl_getinfo($ch);
+    curl_close($ch);
+    
+    // Parsear respuesta JSON si existe
+    if ($response) {
+        $responseData = json_decode($response, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($responseData)) {
+            if (isset($responseData['message'])) {
+                $responseMessage = $responseData['message'];
+            }
+            if (isset($responseData['info'])) {
+                $responseMessage .= ' | Info: ' . json_encode($responseData['info']);
+            }
         }
     }
-}
-
-// Determinar si fue exitoso
-if ($httpCode >= 200 && $httpCode < 300 && empty($curlError)) {
-    $isSuccess = true;
-    // Verificar si la respuesta indica éxito
-    if ($responseData && isset($responseData['message']) && stripos($responseData['message'], 'ok') !== false) {
+    
+    // Determinar si fue exitoso
+    if ($httpCode >= 200 && $httpCode < 300 && empty($curlError)) {
         $isSuccess = true;
+        // Verificar si la respuesta indica éxito
+        if ($responseData && isset($responseData['message']) && stripos($responseData['message'], 'ok') !== false) {
+            $isSuccess = true;
+        }
+    } else {
+        $isSuccess = false;
     }
-} else {
+    
+} catch (Exception $e) {
+    $errorMessage = $e->getMessage();
+    $showError = true;
     $isSuccess = false;
 }
 
-render_page:
-// Limpiar cualquier salida previa
-ob_clean();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -288,7 +240,7 @@ ob_clean();
         <p class="result-message">
           <?php if ($showError && $errorMessage): ?>
             <?php echo htmlspecialchars($errorMessage); ?>
-          <?php elseif ($curlError && $curlError !== 'Ninguno'): ?>
+          <?php elseif ($curlError): ?>
             Error de conexión: <?php echo htmlspecialchars($curlError); ?>
           <?php elseif ($httpCode > 0): ?>
             El servidor respondió con código HTTP <?php echo $httpCode; ?>
@@ -302,29 +254,35 @@ ob_clean();
       <?php endif; ?>
     </div>
 
+    <?php if ($fullPhone || $phone): ?>
     <div class="info-box">
       <strong>Información del Envío:</strong><br>
       <small>
-        Número: <?php echo htmlspecialchars($fullPhone); ?><br>
+        Número: <?php echo htmlspecialchars($fullPhone ?: '521' . $phone); ?><br>
         Código HTTP: <?php echo $httpCode; ?><br>
-        <?php if ($curlInfo['connect_time']): ?>
+        <?php if (isset($curlInfo['connect_time']) && $curlInfo['connect_time']): ?>
           Tiempo de conexión: <?php echo number_format($curlInfo['connect_time'], 2); ?>s<br>
         <?php endif; ?>
-        <?php if ($curlInfo['total_time']): ?>
+        <?php if (isset($curlInfo['total_time']) && $curlInfo['total_time']): ?>
           Tiempo total: <?php echo number_format($curlInfo['total_time'], 2); ?>s
         <?php endif; ?>
       </small>
     </div>
+    <?php endif; ?>
 
+    <?php if ($response): ?>
     <div class="response-box">
       <h4>Respuesta Completa del Servidor:</h4>
-      <pre><?php echo htmlspecialchars($response ?: 'Sin respuesta'); ?></pre>
+      <pre><?php echo htmlspecialchars($response); ?></pre>
     </div>
+    <?php endif; ?>
 
+    <?php if (!empty($data)): ?>
     <div class="response-box">
       <h4>Datos Enviados a la API:</h4>
       <pre><?php echo htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
     </div>
+    <?php endif; ?>
 
     <?php if ($responseData): ?>
     <div class="response-box">
@@ -338,13 +296,14 @@ ob_clean();
       <h4>⚠️ Información de Depuración:</h4>
       <pre><?php 
         $debugInfo = [
-          'url' => $config['api_url'],
+          'url' => $config['api_url'] ?? 'No configurada',
           'http_code' => $httpCode,
           'curl_error' => $curlError ?: 'Ninguno',
           'connect_time' => $curlInfo['connect_time'] ?? 'N/A',
           'total_time' => $curlInfo['total_time'] ?? 'N/A',
           'primary_ip' => $curlInfo['primary_ip'] ?? 'N/A',
-          'response_length' => strlen($response ?? '')
+          'response_length' => strlen($response ?? ''),
+          'post_data_received' => !empty($_POST)
         ];
         echo htmlspecialchars(json_encode($debugInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); 
       ?></pre>
