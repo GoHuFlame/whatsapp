@@ -1,6 +1,14 @@
 <?php
 $config = require __DIR__ . '/config.php';
 
+// Validar que la configuración esté completa
+if (empty($config['api_url']) || empty($config['api_key']) || empty($config['internal_id'])) {
+    die(json_encode([
+        'success' => false,
+        'error' => 'Error de configuración: Faltan variables de entorno. Verifique MERCATELY_API_URL, MERCATELY_API_KEY y MERCATELY_INTERNAL_ID en Vercel'
+    ]));
+}
+
 // Validar que se recibió el número de teléfono
 if (!isset($_POST['phone_number']) || empty(trim($_POST['phone_number']))) {
     die(json_encode([
@@ -146,34 +154,21 @@ if (!empty($tags)) {
 //     $data["custom_fields"] = $customFields;
 // }
 
-// Enviar petición
-// Intentar primero con configuración estándar, si falla probar alternativas
+// Enviar petición - usando la misma configuración que test_connection.php que funciona
 $ch = curl_init($config['api_url']);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Content-Type: application/json',
     'api-key: ' . $config['api_key'],
-    'Accept: application/json',
-    'Connection: close' // Cerrar conexión después de la petición
+    'Accept: application/json'
 ]);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-curl_setopt($ch, CURLOPT_TIMEOUT, 90); // Timeout total de 90 segundos
-curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // Timeout de conexión
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // Verificar SSL
-curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // Verificar host SSL
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Seguir redirecciones
-curl_setopt($ch, CURLOPT_MAXREDIRS, 5); // Máximo de redirecciones
-curl_setopt($ch, CURLOPT_USERAGENT, 'Mercately-PHP-Client/1.0'); // User agent
-curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4); // Forzar IPv4
-curl_setopt($ch, CURLOPT_VERBOSE, false); // Desactivar modo verbose para producción
-
-// Configuraciones adicionales para hosts con restricciones
-curl_setopt($ch, CURLOPT_TCP_KEEPALIVE, 1); // Mantener conexión viva
-curl_setopt($ch, CURLOPT_TCP_KEEPIDLE, 10);
-curl_setopt($ch, CURLOPT_TCP_KEEPINTVL, 1);
-curl_setopt($ch, CURLOPT_FRESH_CONNECT, true); // Forzar nueva conexión
-curl_setopt($ch, CURLOPT_FORBID_REUSE, true); // No reutilizar conexión
+curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 20);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
