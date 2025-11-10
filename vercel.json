@@ -21,16 +21,24 @@
       }
     },
     {
+      "src": "/api/send.php",
+      "dest": "/api/send.php"
+    },
+    {
       "src": "/send.php",
       "dest": "/api/send.php"
     },
     {
-      "src": "/send_alternative.php",
-      "dest": "/api/send_alternative.php"
+      "src": "/api/test_connection.php",
+      "dest": "/api/test_connection.php"
     },
     {
       "src": "/test_connection.php",
       "dest": "/api/test_connection.php"
+    },
+    {
+      "src": "/api/send_test.php",
+      "dest": "/api/send_test.php"
     },
     {
       "src": "/",
@@ -42,6 +50,4 @@
     }
   ]
 }
-
-
 
