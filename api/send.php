@@ -1,7 +1,5 @@
 <?php
 
-header('Content-Type: text/html; charset=utf-8');
-
 $mensajeError = '';
 $esExitoso = false;
 
@@ -52,10 +50,10 @@ try {
     ];
     
     $ch = curl_init($configuracion['api_url']);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Content-Type: application/json',
         'api-key: ' . $configuracion['api_key'],
         'Accept: application/json'
     ]);
@@ -69,8 +67,8 @@ try {
     $respuesta = curl_exec($ch);
     $codigoHttp = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $errorCurl = curl_error($ch);
-    curl_close($ch);
-    
+curl_close($ch);
+
     if ($codigoHttp >= 200 && $codigoHttp < 300 && empty($errorCurl)) {
         $esExitoso = true;
     } else {
@@ -86,8 +84,8 @@ try {
 }
 
 if ($esExitoso) {
-    header('Location: /?exito=1');
+    header('Location: /?exito=1', true, 302);
 } else {
-    header('Location: /?error=' . urlencode($mensajeError));
+    header('Location: /?error=' . urlencode($mensajeError), true, 302);
 }
 exit;
