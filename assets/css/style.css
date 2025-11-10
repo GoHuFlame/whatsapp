@@ -5,21 +5,21 @@
 }
 
 :root {
-  --primary-color: #004aad;
-  --primary-dark: #003a8c;
-  --secondary-color: #25D366;
-  --background: #f5f7fa;
-  --surface: #ffffff;
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --border-color: #e0e0e0;
-  --success-color: #10b981;
-  --error-color: #ef4444;
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
-  --radius: 12px;
-  --radius-sm: 8px;
+  --color-principal: #004aad;
+  --color-principal-oscuro: #003a8c;
+  --color-secundario: #25D366;
+  --fondo: #f5f7fa;
+  --superficie: #ffffff;
+  --texto-principal: #1a1a1a;
+  --texto-secundario: #666666;
+  --color-borde: #e0e0e0;
+  --color-exito: #10b981;
+  --color-error: #ef4444;
+  --sombra-pequena: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --sombra-mediana: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --sombra-grande: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --radio: 12px;
+  --radio-pequeno: 8px;
 }
 
 body {
@@ -27,21 +27,21 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   padding: 20px;
-  color: var(--text-primary);
+  color: var(--texto-principal);
   line-height: 1.6;
 }
 
 .container {
   max-width: 900px;
   margin: 0 auto;
-  background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
+  background: var(--superficie);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-grande);
   overflow: hidden;
 }
 
 .header {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, var(--color-principal) 0%, var(--color-principal-oscuro) 100%);
   color: white;
   padding: 40px;
   text-align: center;
@@ -81,7 +81,7 @@ form {
 .form-section {
   margin-bottom: 32px;
   padding-bottom: 32px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--color-borde);
 }
 
 .form-section:last-of-type {
@@ -93,7 +93,7 @@ form {
 .section-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--texto-principal);
   margin-bottom: 24px;
   display: flex;
   align-items: center;
@@ -117,13 +117,13 @@ form {
 label {
   display: block;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--texto-principal);
   margin-bottom: 8px;
   font-size: 14px;
 }
 
 .required {
-  color: var(--error-color);
+  color: var(--color-error);
 }
 
 input[type="text"],
@@ -134,19 +134,19 @@ input[type="number"],
 textarea {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-borde);
+  border-radius: var(--radio-pequeno);
   font-size: 14px;
   font-family: inherit;
   transition: all 0.3s ease;
-  background: var(--surface);
-  color: var(--text-primary);
+  background: var(--superficie);
+  color: var(--texto-principal);
 }
 
 input:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--color-principal);
   box-shadow: 0 0 0 3px rgba(0, 74, 173, 0.1);
 }
 
@@ -159,7 +159,7 @@ textarea {
   display: block;
   margin-top: 6px;
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--texto-secundario);
 }
 
 .form-actions {
@@ -167,14 +167,14 @@ textarea {
   gap: 12px;
   margin-top: 32px;
   padding-top: 32px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--color-borde);
 }
 
 button {
   flex: 1;
   padding: 14px 24px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radio-pequeno);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -186,14 +186,14 @@ button {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, var(--color-principal) 0%, var(--color-principal-oscuro) 100%);
   color: white;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--sombra-mediana);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--sombra-grande);
 }
 
 .btn-primary:active {
@@ -201,28 +201,82 @@ button {
 }
 
 .btn-secondary {
-  background: var(--surface);
-  color: var(--text-primary);
-  border: 2px solid var(--border-color);
+  background: var(--superficie);
+  color: var(--texto-principal);
+  border: 2px solid var(--color-borde);
 }
 
 .btn-secondary:hover {
-  background: var(--background);
-  border-color: var(--text-secondary);
+  background: var(--fondo);
+  border-color: var(--texto-secundario);
 }
 
 .btn-icon {
   font-size: 18px;
 }
 
-/* Loading state */
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
 }
 
-/* Responsive */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: var(--radio-pequeno);
+  box-shadow: var(--sombra-mediana);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 300px;
+  max-width: 500px;
+  animation: deslizarEntrada 0.3s ease-out;
+}
+
+.toast.exito {
+  background: var(--color-exito);
+  color: white;
+}
+
+.toast.error {
+  background: var(--color-error);
+  color: white;
+}
+
+.toast-icon {
+  font-size: 24px;
+}
+
+.toast.ocultando {
+  animation: deslizarSalida 0.3s ease-out forwards;
+}
+
+@keyframes deslizarEntrada {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes deslizarSalida {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
 @media (max-width: 768px) {
   body {
     padding: 10px;
@@ -251,10 +305,16 @@ button:disabled {
   button {
     width: 100%;
   }
+
+  .toast {
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+    max-width: none;
+  }
 }
 
-/* Animations */
-@keyframes fadeIn {
+@keyframes aparecer {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -266,11 +326,11 @@ button:disabled {
 }
 
 .container {
-  animation: fadeIn 0.5s ease-out;
+  animation: aparecer 0.5s ease-out;
 }
 
 .form-section {
-  animation: fadeIn 0.5s ease-out;
+  animation: aparecer 0.5s ease-out;
   animation-fill-mode: both;
 }
 
@@ -278,5 +338,3 @@ button:disabled {
 .form-section:nth-child(2) { animation-delay: 0.2s; }
 .form-section:nth-child(3) { animation-delay: 0.3s; }
 .form-section:nth-child(4) { animation-delay: 0.4s; }
-
-
