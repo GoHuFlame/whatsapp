@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Validación del formulario antes de enviar
   form.addEventListener('submit', function(e) {
+    console.log('Formulario enviado - validando...');
+    
     const phone = phoneInput.value.trim();
     
     // Validar número de teléfono
@@ -44,14 +46,18 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    // NO prevenir el envío - dejar que el formulario se envíe normalmente
+    // Si llegamos aquí, todas las validaciones pasaron
+    console.log('Validaciones pasadas - enviando formulario...');
+    
     // Mostrar estado de carga
     const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="btn-icon">⏳</span> Enviando...';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="btn-icon">⏳</span> Enviando...';
+    }
     
-    // Permitir que el formulario se envíe normalmente
-    return true;
+    // NO prevenir el envío - dejar que el formulario se envíe normalmente
+    // El formulario se enviará automáticamente después de esta función
   });
 
   // Validación en tiempo real para campos requeridos
