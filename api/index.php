@@ -15,7 +15,7 @@
         </svg>
       </div>
       <h1>Enviar Notificación WhatsApp</h1>
-      <p class="subtitle">Sistema de envío de mensajes Wahtsapp</p>
+      <p class="subtitle">Sistema de envío de mensajes</p>
     </div>
 
     <form id="formularioNotificacion" action="/api/send.php" method="POST">
@@ -30,7 +30,7 @@
             maxlength="10"
             required
           >
-          <small class="help-text">Ingrese 10 dígitos</small>
+          <small class="help-text">Ingrese 10 dígitos sin código de país</small>
         </div>
       </div>
 
@@ -40,7 +40,7 @@
           Información de la Cita
         </h3>
 
-        <div class="info-box" style="background: #e3f2fd; border-left: 4px solid var(--primary-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px;">
+        <div class="info-box" style="background: #e3f2fd; border-left: 4px solid var(--color-principal); padding: 15px; border-radius: var(--radio-pequeno); margin-bottom: 20px; font-size: 13px;">
           <strong>Plantilla:</strong> "Hola {{1}}, confirmamos tu cita con {{2}} el {{3}} a las {{4}}. Consultorio: {{5}}. Llega 15 minutos antes"
         </div>
 
