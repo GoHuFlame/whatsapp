@@ -18,7 +18,7 @@
       <p class="subtitle">Sistema de envío de mensajes Mercately</p>
     </div>
 
-    <form id="notificationForm" action="/api/send.php" method="POST">
+    <form id="notificationForm" action="/api/send.php" method="POST" novalidate>
       <div class="form-section">
         <div class="form-group">
           <label for="phone_number">Número de Teléfono <span class="required">*</span></label>
