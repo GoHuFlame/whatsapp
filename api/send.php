@@ -1,5 +1,5 @@
 <?php
-$config = require 'config.php';
+$config = require __DIR__ . '/config.php';
 
 // Validar que se recibió el número de teléfono
 if (!isset($_POST['phone_number']) || empty(trim($_POST['phone_number']))) {
@@ -205,7 +205,7 @@ $debugInfo = [
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resultado del Envío | Mercately</title>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
   <style>
     .result-container {
       max-width: 700px;
@@ -336,7 +336,7 @@ $debugInfo = [
     <?php endif; ?>
 
     <div style="text-align: center;">
-      <a href="index.php" class="btn-back">← Volver al Formulario</a>
+      <a href="/" class="btn-back">← Volver al Formulario</a>
     </div>
   </div>
 </body>
