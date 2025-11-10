@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Enviar Notificación WhatsApp | Mercately</title>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
   <div class="container">
@@ -18,7 +18,7 @@
       <p class="subtitle">Sistema de envío de mensajes Mercately</p>
     </div>
 
-    <form id="notificationForm" action="send.php" method="POST">
+    <form id="notificationForm" action="/api/send.php" method="POST">
       <div class="form-section">
         <div class="form-group">
           <label for="phone_number">Número de Teléfono <span class="required">*</span></label>
@@ -118,6 +118,6 @@
     </form>
   </div>
 
-  <script src="assets/js/main.js"></script>
+  <script src="/assets/js/main.js"></script>
 </body>
 </html>
