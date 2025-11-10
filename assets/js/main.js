@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (telefono.length !== 10) {
       e.preventDefault();
-      alert('Por favor, ingrese un número de teléfono válido de 10 dígitos');
+      mostrarToast('Por favor, ingrese un número de teléfono válido de 10 dígitos', 'error');
       inputTelefono.focus();
       return false;
     }
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const input = document.getElementById(campo.id);
       if (!input || input.value.trim() === '') {
         e.preventDefault();
-        alert(`Por favor, ingrese ${campo.nombre.toLowerCase()}`);
+        mostrarToast(`Por favor, ingrese ${campo.nombre.toLowerCase()}`, 'error');
         if (input) input.focus();
         return false;
       }
@@ -48,16 +48,43 @@ document.addEventListener('DOMContentLoaded', function() {
   inputsRequeridos.forEach(input => {
     input.addEventListener('blur', function() {
       if (this.value.trim() === '') {
-        this.style.borderColor = 'var(--error-color)';
+        this.style.borderColor = 'var(--color-error)';
       } else {
-        this.style.borderColor = 'var(--border-color)';
+        this.style.borderColor = 'var(--color-borde)';
       }
     });
 
     input.addEventListener('input', function() {
       if (this.value.trim() !== '') {
-        this.style.borderColor = 'var(--border-color)';
+        this.style.borderColor = 'var(--color-borde)';
       }
     });
   });
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('exito') === '1') {
+    mostrarToast('Mensaje enviado correctamente', 'exito');
+    formulario.reset();
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else if (urlParams.get('error')) {
+    mostrarToast(decodeURIComponent(urlParams.get('error')), 'error');
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
 });
+
+function mostrarToast(mensaje, tipo) {
+  const toast = document.createElement('div');
+  toast.className = `toast ${tipo}`;
+  toast.innerHTML = `
+    <span class="toast-icon">${tipo === 'exito' ? '✅' : '❌'}</span>
+    <span>${mensaje}</span>
+  `;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('ocultando');
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 3000);
+}
