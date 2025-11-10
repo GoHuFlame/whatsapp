@@ -29,16 +29,8 @@
       "dest": "/api/send.php"
     },
     {
-      "src": "/api/test_connection.php",
-      "dest": "/api/test_connection.php"
-    },
-    {
       "src": "/test_connection.php",
       "dest": "/api/test_connection.php"
-    },
-    {
-      "src": "/api/send_test.php",
-      "dest": "/api/send_test.php"
     },
     {
       "src": "/",
