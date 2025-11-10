@@ -26,68 +26,45 @@ if (strlen($phone) !== 10) {
     ]));
 }
 
-// Agregar prefijo de México (521) - probar sin el signo + primero
-// Algunas APIs requieren el número sin el signo +
+// Agregar prefijo de México (521)
 $fullPhone = '521' . $phone;
 
 // Validar y recopilar parámetros de plantilla en el orden correcto
-// Plantilla: "Hola {{1}}, confirmamos tu cita con {{2}} el {{3}} a las {{4}}. Consultorio: {{5}}"
 $templateParams = [];
 
-// Parámetro 1: Nombre del paciente
 if (!isset($_POST['patient_name']) || empty(trim($_POST['patient_name']))) {
-    die(json_encode([
-        'success' => false,
-        'error' => 'El nombre del paciente es requerido'
-    ]));
+    die(json_encode(['success' => false, 'error' => 'El nombre del paciente es requerido']));
 }
 $templateParams[] = trim($_POST['patient_name']);
 
-// Parámetro 2: Nombre del doctor
 if (!isset($_POST['doctor_name']) || empty(trim($_POST['doctor_name']))) {
-    die(json_encode([
-        'success' => false,
-        'error' => 'El nombre del doctor es requerido'
-    ]));
+    die(json_encode(['success' => false, 'error' => 'El nombre del doctor es requerido']));
 }
 $templateParams[] = trim($_POST['doctor_name']);
 
-// Parámetro 3: Fecha de la cita
 if (!isset($_POST['appointment_date']) || empty(trim($_POST['appointment_date']))) {
-    die(json_encode([
-        'success' => false,
-        'error' => 'La fecha de la cita es requerida'
-    ]));
+    die(json_encode(['success' => false, 'error' => 'La fecha de la cita es requerida']));
 }
 $templateParams[] = trim($_POST['appointment_date']);
 
-// Parámetro 4: Hora de la cita
 if (!isset($_POST['appointment_time']) || empty(trim($_POST['appointment_time']))) {
-    die(json_encode([
-        'success' => false,
-        'error' => 'La hora de la cita es requerida'
-    ]));
+    die(json_encode(['success' => false, 'error' => 'La hora de la cita es requerida']));
 }
 $templateParams[] = trim($_POST['appointment_time']);
 
-// Parámetro 5: Número de consultorio
 if (!isset($_POST['consultory_number']) || empty(trim($_POST['consultory_number']))) {
-    die(json_encode([
-        'success' => false,
-        'error' => 'El número de consultorio es requerido'
-    ]));
+    die(json_encode(['success' => false, 'error' => 'El número de consultorio es requerido']));
 }
 $templateParams[] = trim($_POST['consultory_number']);
 
-// Construir estructura de datos EXACTAMENTE igual que test_connection.php que funciona
-// Solo los 3 campos esenciales: phone_number, internal_id, template_params
+// Construir estructura de datos EXACTAMENTE igual que test_connection.php
 $data = [
     "phone_number" => $fullPhone,
     "internal_id" => $config['internal_id'],
     "template_params" => $templateParams
 ];
 
-// Enviar petición - usando la misma configuración que test_connection.php que funciona
+// Enviar petición - configuración idéntica a test_connection.php
 $ch = curl_init($config['api_url']);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POST, true);
@@ -109,31 +86,35 @@ $curlError = curl_error($ch);
 $curlInfo = curl_getinfo($ch);
 curl_close($ch);
 
-// Debug: Log de respuesta (para ver en Vercel logs)
-error_log("Mercately Send - HTTP Code: " . $httpCode);
-error_log("Mercately Send - Response: " . substr($response ?: 'Sin respuesta', 0, 500));
-if ($curlError) {
-    error_log("Mercately Send - cURL Error: " . $curlError);
+// Parsear respuesta JSON si existe
+$responseData = null;
+$responseMessage = '';
+$isSuccess = false;
+
+if ($response) {
+    $responseData = json_decode($response, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($responseData)) {
+        // La respuesta es JSON válido
+        if (isset($responseData['message'])) {
+            $responseMessage = $responseData['message'];
+        }
+        if (isset($responseData['info'])) {
+            $responseMessage .= ' | Info: ' . json_encode($responseData['info']);
+        }
+    }
 }
-error_log("Mercately Send - Datos enviados: " . json_encode($data));
 
-// Log para depuración (opcional, comentar en producción)
-$debugInfo = [
-    'url' => $config['api_url'],
-    'http_code' => $httpCode,
-    'curl_error' => $curlError,
-    'curl_info' => [
-        'total_time' => isset($curlInfo['total_time']) ? $curlInfo['total_time'] : null,
-        'connect_time' => isset($curlInfo['connect_time']) ? $curlInfo['connect_time'] : null,
-        'primary_ip' => isset($curlInfo['primary_ip']) ? $curlInfo['primary_ip'] : null,
-        'namelookup_time' => isset($curlInfo['namelookup_time']) ? $curlInfo['namelookup_time'] : null,
-        'http_code' => isset($curlInfo['http_code']) ? $curlInfo['http_code'] : null,
-        'url' => isset($curlInfo['url']) ? $curlInfo['url'] : null,
-    ],
-    'dns_test' => gethostbyname('app.mercately.com') !== 'app.mercately.com' ? gethostbyname('app.mercately.com') : 'DNS no resuelve'
-];
+// Determinar si fue exitoso
+if ($httpCode >= 200 && $httpCode < 300 && empty($curlError)) {
+    $isSuccess = true;
+    // Verificar si la respuesta indica éxito
+    if ($responseData && isset($responseData['message']) && stripos($responseData['message'], 'ok') !== false) {
+        $isSuccess = true;
+    }
+} else {
+    $isSuccess = false;
+}
 
-// Página de respuesta con diseño profesional
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -187,6 +168,8 @@ $debugInfo = [
       overflow-x: auto;
       font-size: 12px;
       line-height: 1.5;
+      max-height: 400px;
+      overflow-y: auto;
     }
     .btn-back {
       display: inline-block;
@@ -211,23 +194,40 @@ $debugInfo = [
       border-radius: var(--radius-sm);
       margin-bottom: 20px;
     }
+    .warning-box {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
   <div class="result-container">
     <div class="result-header">
-      <?php if ($httpCode >= 200 && $httpCode < 300 && empty($curlError)): ?>
+      <?php if ($isSuccess): ?>
         <div class="result-icon">✅</div>
         <h2 class="result-title success">Mensaje Enviado Correctamente</h2>
         <p class="result-message">La notificación de WhatsApp ha sido enviada exitosamente.</p>
+        <?php if ($responseMessage): ?>
+          <p style="font-size: 14px; color: var(--success-color); margin-top: 10px;">
+            <strong>Respuesta:</strong> <?php echo htmlspecialchars($responseMessage); ?>
+          </p>
+        <?php endif; ?>
       <?php else: ?>
         <div class="result-icon">❌</div>
         <h2 class="result-title error">Error al Enviar Mensaje</h2>
         <p class="result-message">
           <?php if ($curlError): ?>
             Error de conexión: <?php echo htmlspecialchars($curlError); ?>
-          <?php else: ?>
+          <?php elseif ($httpCode > 0): ?>
             El servidor respondió con código HTTP <?php echo $httpCode; ?>
+            <?php if ($responseMessage): ?>
+              <br><strong>Mensaje:</strong> <?php echo htmlspecialchars($responseMessage); ?>
+            <?php endif; ?>
+          <?php else: ?>
+            No se recibió respuesta del servidor
           <?php endif; ?>
         </p>
       <?php endif; ?>
@@ -235,38 +235,56 @@ $debugInfo = [
 
     <div class="info-box">
       <strong>Información del Envío:</strong><br>
-      <small>Número: <?php echo htmlspecialchars($fullPhone); ?> | Código HTTP: <?php echo $httpCode; ?></small>
+      <small>
+        Número: <?php echo htmlspecialchars($fullPhone); ?><br>
+        Código HTTP: <?php echo $httpCode; ?><br>
+        <?php if ($curlInfo['connect_time']): ?>
+          Tiempo de conexión: <?php echo number_format($curlInfo['connect_time'], 2); ?>s<br>
+        <?php endif; ?>
+        <?php if ($curlInfo['total_time']): ?>
+          Tiempo total: <?php echo number_format($curlInfo['total_time'], 2); ?>s
+        <?php endif; ?>
+      </small>
     </div>
 
     <div class="response-box">
-      <h4>Respuesta del Servidor:</h4>
+      <h4>Respuesta Completa del Servidor:</h4>
       <pre><?php echo htmlspecialchars($response ?: 'Sin respuesta'); ?></pre>
     </div>
 
     <div class="response-box">
-      <h4>Datos Enviados:</h4>
+      <h4>Datos Enviados a la API:</h4>
       <pre><?php echo htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
     </div>
 
-    <?php if (!empty($curlError) || $httpCode == 0): ?>
-    <div class="response-box" style="border-left-color: var(--error-color);">
-      <h4>Información de Depuración:</h4>
-      <pre><?php echo htmlspecialchars(json_encode($debugInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
-      <p style="margin-top: 10px; font-size: 13px; color: var(--text-secondary);">
-        <strong>Posibles causas:</strong><br>
-        • El servidor de Mercately no está respondiendo o no es accesible desde este hosting<br>
-        • Problemas de conectividad de red o firewall bloqueando la conexión<br>
-        • El endpoint puede estar incorrecto o no disponible<br>
-        • Problemas de DNS (no se puede resolver app.mercately.com)<br>
-        • Verifique que la API key sea correcta y tenga permisos<br>
-        • El servidor puede requerir conexiones desde IPs autorizadas
-      </p>
-      <p style="margin-top: 10px; font-size: 12px; color: var(--text-secondary); background: #fff3cd; padding: 10px; border-radius: 5px;">
-        <strong>💡 Soluciones sugeridas:</strong><br>
-        1. Verifique que el hosting tenga acceso saliente a HTTPS<br>
-        2. Contacte al soporte de Mercately para verificar el endpoint y permisos<br>
-        3. Pruebe la conexión desde otro servidor o localmente<br>
-        4. Verifique si hay restricciones de firewall en el hosting
+    <?php if ($responseData): ?>
+    <div class="response-box">
+      <h4>Respuesta Parseada (JSON):</h4>
+      <pre><?php echo htmlspecialchars(json_encode($responseData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!$isSuccess): ?>
+    <div class="warning-box">
+      <h4>⚠️ Información de Depuración:</h4>
+      <pre><?php 
+        $debugInfo = [
+          'url' => $config['api_url'],
+          'http_code' => $httpCode,
+          'curl_error' => $curlError ?: 'Ninguno',
+          'connect_time' => $curlInfo['connect_time'] ?? 'N/A',
+          'total_time' => $curlInfo['total_time'] ?? 'N/A',
+          'primary_ip' => $curlInfo['primary_ip'] ?? 'N/A',
+          'response_length' => strlen($response ?? '')
+        ];
+        echo htmlspecialchars(json_encode($debugInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); 
+      ?></pre>
+      <p style="margin-top: 10px; font-size: 13px;">
+        <strong>Si el código HTTP es 200 pero el mensaje no llega:</strong><br>
+        • Verifique que el número de teléfono sea válido y esté registrado en WhatsApp<br>
+        • Verifique que la plantilla (internal_id) esté aprobada y activa<br>
+        • Revise la respuesta del servidor arriba para ver si hay mensajes de error específicos<br>
+        • Contacte al soporte de Mercately con el código HTTP y la respuesta completa
       </p>
     </div>
     <?php endif; ?>
@@ -277,4 +295,3 @@ $debugInfo = [
   </div>
 </body>
 </html>
-
