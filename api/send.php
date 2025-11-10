@@ -1,171 +1,135 @@
 <?php
-// Forzar mostrar errores
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('log_errors', 1);
+/**
+ * Procesa el envío de notificaciones WhatsApp a través de la API
+ * 
+ * Estructura de datos enviada:
+ * {
+ *   "phone_number": "521XXXXXXXXXX",
+ *   "internal_id": "ID_DE_LA_PLANTILLA",
+ *   "template_params": ["param1", "param2", "param3", "param4", "param5"]
+ * }
+ */
 
-// Inicializar todas las variables primero
-$config = null;
-$errorMessage = '';
-$showError = false;
-$httpCode = 0;
-$response = '';
-$curlError = '';
-$data = [];
-$fullPhone = '';
-$curlInfo = [];
-$responseData = null;
-$responseMessage = '';
-$isSuccess = false;
-$phone = '';
+header('Content-Type: text/html; charset=utf-8');
 
-// Verificar método HTTP
-$isPost = $_SERVER['REQUEST_METHOD'] === 'POST';
-
-// Debug: Log inicial
-error_log("=== MERCATELY SEND.PHP EJECUTADO ===");
-error_log("Método: " . $_SERVER['REQUEST_METHOD']);
-error_log("POST recibido: " . (!empty($_POST) ? 'Sí' : 'No'));
-error_log("POST count: " . count($_POST));
-if (!empty($_POST)) {
-    error_log("POST keys: " . implode(', ', array_keys($_POST)));
-}
+$configuracion = null;
+$mensajeError = '';
+$mostrarError = false;
+$codigoHttp = 0;
+$respuesta = '';
+$errorCurl = '';
+$datos = [];
+$telefonoCompleto = '';
+$infoCurl = [];
+$datosRespuesta = null;
+$mensajeRespuesta = '';
+$esExitoso = false;
+$telefono = '';
 
 try {
-    if (!$isPost) {
-        throw new Exception('Esta página solo acepta peticiones POST. Por favor, use el formulario.');
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Exception('Esta página solo acepta peticiones POST');
     }
     
-    $config = require __DIR__ . '/config.php';
-    error_log("Config cargado: " . (!empty($config) ? 'Sí' : 'No'));
+    $configuracion = require __DIR__ . '/config.php';
     
-    // Validar que la configuración esté completa
-    if (empty($config['api_url']) || empty($config['api_key']) || empty($config['internal_id'])) {
-        throw new Exception('Error de configuración: Faltan variables de entorno. Verifique MERCATELY_API_URL, MERCATELY_API_KEY y MERCATELY_INTERNAL_ID en Vercel');
+    if (empty($configuracion['api_url']) || empty($configuracion['api_key']) || empty($configuracion['internal_id'])) {
+        throw new Exception('Error de configuración: Faltan variables de entorno');
     }
     
-    // Validar que se recibió el número de teléfono
     if (!isset($_POST['phone_number']) || empty(trim($_POST['phone_number']))) {
         throw new Exception('El número de teléfono es requerido');
     }
     
-    // Limpiar número y validar formato
-    $phone = preg_replace('/\D/', '', $_POST['phone_number']);
-    if (strlen($phone) !== 10) {
+    $telefono = preg_replace('/\D/', '', $_POST['phone_number']);
+    if (strlen($telefono) !== 10) {
         throw new Exception('El número debe tener exactamente 10 dígitos');
     }
     
-    // Agregar prefijo de México (521)
-    $fullPhone = '521' . $phone;
+    $telefonoCompleto = '521' . $telefono;
     
-    // Validar y recopilar parámetros de plantilla
-    $templateParams = [];
+    $parametrosPlantilla = [];
     
-    if (!isset($_POST['patient_name']) || empty(trim($_POST['patient_name']))) {
-        throw new Exception('El nombre del paciente es requerido');
-    }
-    $templateParams[] = trim($_POST['patient_name']);
-    
-    if (!isset($_POST['doctor_name']) || empty(trim($_POST['doctor_name']))) {
-        throw new Exception('El nombre del doctor es requerido');
-    }
-    $templateParams[] = trim($_POST['doctor_name']);
-    
-    if (!isset($_POST['appointment_date']) || empty(trim($_POST['appointment_date']))) {
-        throw new Exception('La fecha de la cita es requerida');
-    }
-    $templateParams[] = trim($_POST['appointment_date']);
-    
-    if (!isset($_POST['appointment_time']) || empty(trim($_POST['appointment_time']))) {
-        throw new Exception('La hora de la cita es requerida');
-    }
-    $templateParams[] = trim($_POST['appointment_time']);
-    
-    if (!isset($_POST['consultory_number']) || empty(trim($_POST['consultory_number']))) {
-        throw new Exception('El número de consultorio es requerido');
-    }
-    $templateParams[] = trim($_POST['consultory_number']);
-    
-    // Construir estructura de datos EXACTAMENTE igual que test_connection.php
-    $data = [
-        "phone_number" => $fullPhone,
-        "internal_id" => $config['internal_id'],
-        "template_params" => $templateParams
+    $camposRequeridos = [
+        'patient_name' => 'El nombre del paciente es requerido',
+        'doctor_name' => 'El nombre del doctor es requerido',
+        'appointment_date' => 'La fecha de la cita es requerida',
+        'appointment_time' => 'La hora de la cita es requerida',
+        'consultory_number' => 'El número de consultorio es requerido'
     ];
     
-    error_log("Datos a enviar: " . json_encode($data));
+    foreach ($camposRequeridos as $campo => $mensajeError) {
+        if (!isset($_POST[$campo]) || empty(trim($_POST[$campo]))) {
+            throw new Exception($mensajeError);
+        }
+        $parametrosPlantilla[] = trim($_POST[$campo]);
+    }
     
-    // Enviar petición - configuración idéntica a test_connection.php
-    $ch = curl_init($config['api_url']);
+    $datos = [
+        "phone_number" => $telefonoCompleto,
+        "internal_id" => $configuracion['internal_id'],
+        "template_params" => $parametrosPlantilla
+    ];
+    
+    $ch = curl_init($configuracion['api_url']);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Content-Type: application/json',
-        'api-key: ' . $config['api_key'],
+        'api-key: ' . $configuracion['api_key'],
         'Accept: application/json'
     ]);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($datos));
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 20);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
     curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
     
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    $curlInfo = curl_getinfo($ch);
+    $respuesta = curl_exec($ch);
+    $codigoHttp = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $errorCurl = curl_error($ch);
+    $infoCurl = curl_getinfo($ch);
     curl_close($ch);
     
-    error_log("HTTP Code: " . $httpCode);
-    error_log("Response: " . substr($response ?: 'Sin respuesta', 0, 200));
-    
-    // Parsear respuesta JSON si existe
-    if ($response) {
-        $responseData = json_decode($response, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($responseData)) {
-            if (isset($responseData['message'])) {
-                $responseMessage = $responseData['message'];
+    if ($respuesta) {
+        $datosRespuesta = json_decode($respuesta, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($datosRespuesta)) {
+            if (isset($datosRespuesta['message'])) {
+                $mensajeRespuesta = $datosRespuesta['message'];
             }
-            if (isset($responseData['info'])) {
-                $responseMessage .= ' | Info: ' . json_encode($responseData['info']);
+            if (isset($datosRespuesta['info'])) {
+                $mensajeRespuesta .= ' | Info: ' . json_encode($datosRespuesta['info']);
             }
         }
     }
     
-    // Determinar si fue exitoso
-    if ($httpCode >= 200 && $httpCode < 300 && empty($curlError)) {
-        $isSuccess = true;
-        // Verificar si la respuesta indica éxito
-        if ($responseData && isset($responseData['message']) && stripos($responseData['message'], 'ok') !== false) {
-            $isSuccess = true;
+    if ($codigoHttp >= 200 && $codigoHttp < 300 && empty($errorCurl)) {
+        $esExitoso = true;
+        if ($datosRespuesta && isset($datosRespuesta['message']) && stripos($datosRespuesta['message'], 'ok') !== false) {
+            $esExitoso = true;
         }
     } else {
-        $isSuccess = false;
+        $esExitoso = false;
     }
     
 } catch (Exception $e) {
-    $errorMessage = $e->getMessage();
-    $showError = true;
-    $isSuccess = false;
-    error_log("Exception: " . $errorMessage);
+    $mensajeError = $e->getMessage();
+    $mostrarError = true;
+    $esExitoso = false;
 } catch (Error $e) {
-    $errorMessage = 'Error fatal: ' . $e->getMessage();
-    $showError = true;
-    $isSuccess = false;
-    error_log("Error fatal: " . $errorMessage);
+    $mensajeError = 'Error fatal: ' . $e->getMessage();
+    $mostrarError = true;
+    $esExitoso = false;
 }
 
-// Asegurar que siempre tengamos valores válidos
-if (!isset($config)) {
-    $config = ['api_url' => 'No configurada', 'api_key' => '', 'internal_id' => ''];
+if (!isset($configuracion)) {
+    $configuracion = ['api_url' => 'No configurada', 'api_key' => '', 'internal_id' => ''];
 }
-if (!isset($fullPhone) && isset($phone)) {
-    $fullPhone = '521' . $phone;
+if (!isset($telefonoCompleto) && isset($telefono)) {
+    $telefonoCompleto = '521' . $telefono;
 }
 
-// Forzar salida inmediata
-header('Content-Type: text/html; charset=utf-8');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -245,69 +209,32 @@ header('Content-Type: text/html; charset=utf-8');
       border-radius: var(--radius-sm);
       margin-bottom: 20px;
     }
-    .warning-box {
-      background: #fff3cd;
-      border-left: 4px solid #ffc107;
-      padding: 15px;
-      border-radius: var(--radius-sm);
-      margin-bottom: 20px;
-    }
-    .debug-box {
-      background: #ffeb3b;
-      border: 2px solid #f57f17;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-radius: 5px;
-      font-size: 14px;
-    }
   </style>
 </head>
 <body>
   <div class="result-container">
-    <!-- Debug Info - SIEMPRE VISIBLE -->
-    <div class="debug-box">
-      <strong>🔍 DEBUG INFO (SIEMPRE VISIBLE):</strong><br>
-      ✅ Archivo ejecutado: api/send.php<br>
-      POST recibido: <?php echo !empty($_POST) ? '✅ SÍ (' . count($_POST) . ' campos)' : '❌ NO'; ?><br>
-      Método HTTP: <?php echo $_SERVER['REQUEST_METHOD']; ?><br>
-      URL: <?php echo $_SERVER['REQUEST_URI']; ?><br>
-      <?php if (!empty($_POST)): ?>
-        <strong>Campos POST recibidos:</strong> <?php echo implode(', ', array_keys($_POST)); ?><br>
-        <strong>Valores:</strong><br>
-        <?php foreach ($_POST as $key => $value): ?>
-          - <?php echo htmlspecialchars($key); ?>: <?php echo htmlspecialchars(substr($value, 0, 50)); ?><br>
-        <?php endforeach; ?>
-      <?php else: ?>
-        <strong style="color: red;">⚠️ NO SE RECIBIERON DATOS POST - El formulario no se está enviando correctamente</strong><br>
-        <strong>Posibles causas:</strong><br>
-        • El JavaScript está previniendo el envío<br>
-        • La ruta en vercel.json no está configurada correctamente<br>
-        • El formulario no está apuntando a la URL correcta
-      <?php endif; ?>
-    </div>
-    
     <div class="result-header">
-      <?php if ($isSuccess && !$showError): ?>
+      <?php if ($esExitoso && !$mostrarError): ?>
         <div class="result-icon">✅</div>
         <h2 class="result-title success">Mensaje Enviado Correctamente</h2>
         <p class="result-message">La notificación de WhatsApp ha sido enviada exitosamente.</p>
-        <?php if ($responseMessage): ?>
+        <?php if ($mensajeRespuesta): ?>
           <p style="font-size: 14px; color: var(--success-color); margin-top: 10px;">
-            <strong>Respuesta:</strong> <?php echo htmlspecialchars($responseMessage); ?>
+            <strong>Respuesta:</strong> <?php echo htmlspecialchars($mensajeRespuesta); ?>
           </p>
         <?php endif; ?>
       <?php else: ?>
         <div class="result-icon">❌</div>
-        <h2 class="result-title error"><?php echo $showError ? 'Error de Validación' : 'Error al Enviar Mensaje'; ?></h2>
+        <h2 class="result-title error"><?php echo $mostrarError ? 'Error de Validación' : 'Error al Enviar Mensaje'; ?></h2>
         <p class="result-message">
-          <?php if ($showError && $errorMessage): ?>
-            <?php echo htmlspecialchars($errorMessage); ?>
-          <?php elseif ($curlError): ?>
-            Error de conexión: <?php echo htmlspecialchars($curlError); ?>
-          <?php elseif ($httpCode > 0): ?>
-            El servidor respondió con código HTTP <?php echo $httpCode; ?>
-            <?php if ($responseMessage): ?>
-              <br><strong>Mensaje:</strong> <?php echo htmlspecialchars($responseMessage); ?>
+          <?php if ($mostrarError && $mensajeError): ?>
+            <?php echo htmlspecialchars($mensajeError); ?>
+          <?php elseif ($errorCurl): ?>
+            Error de conexión: <?php echo htmlspecialchars($errorCurl); ?>
+          <?php elseif ($codigoHttp > 0): ?>
+            El servidor respondió con código HTTP <?php echo $codigoHttp; ?>
+            <?php if ($mensajeRespuesta): ?>
+              <br><strong>Mensaje:</strong> <?php echo htmlspecialchars($mensajeRespuesta); ?>
             <?php endif; ?>
           <?php else: ?>
             No se recibió respuesta del servidor
@@ -316,67 +243,33 @@ header('Content-Type: text/html; charset=utf-8');
       <?php endif; ?>
     </div>
 
-    <?php if ($fullPhone || $phone): ?>
+    <?php if ($telefonoCompleto || $telefono): ?>
     <div class="info-box">
       <strong>Información del Envío:</strong><br>
       <small>
-        Número: <?php echo htmlspecialchars($fullPhone ?: '521' . $phone); ?><br>
-        Código HTTP: <?php echo $httpCode; ?><br>
-        <?php if (isset($curlInfo['connect_time']) && $curlInfo['connect_time']): ?>
-          Tiempo de conexión: <?php echo number_format($curlInfo['connect_time'], 2); ?>s<br>
+        Número: <?php echo htmlspecialchars($telefonoCompleto ?: '521' . $telefono); ?><br>
+        Código HTTP: <?php echo $codigoHttp; ?><br>
+        <?php if (isset($infoCurl['connect_time']) && $infoCurl['connect_time']): ?>
+          Tiempo de conexión: <?php echo number_format($infoCurl['connect_time'], 2); ?>s<br>
         <?php endif; ?>
-        <?php if (isset($curlInfo['total_time']) && $curlInfo['total_time']): ?>
-          Tiempo total: <?php echo number_format($curlInfo['total_time'], 2); ?>s
+        <?php if (isset($infoCurl['total_time']) && $infoCurl['total_time']): ?>
+          Tiempo total: <?php echo number_format($infoCurl['total_time'], 2); ?>s
         <?php endif; ?>
       </small>
     </div>
     <?php endif; ?>
 
-    <?php if ($response): ?>
+    <?php if ($respuesta): ?>
     <div class="response-box">
-      <h4>Respuesta Completa del Servidor:</h4>
-      <pre><?php echo htmlspecialchars($response); ?></pre>
+      <h4>Respuesta del Servidor:</h4>
+      <pre><?php echo htmlspecialchars($respuesta); ?></pre>
     </div>
     <?php endif; ?>
 
-    <?php if (!empty($data)): ?>
+    <?php if (!empty($datos)): ?>
     <div class="response-box">
       <h4>Datos Enviados a la API:</h4>
-      <pre><?php echo htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
-    </div>
-    <?php endif; ?>
-
-    <?php if ($responseData): ?>
-    <div class="response-box">
-      <h4>Respuesta Parseada (JSON):</h4>
-      <pre><?php echo htmlspecialchars(json_encode($responseData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
-    </div>
-    <?php endif; ?>
-
-    <?php if (!$isSuccess): ?>
-    <div class="warning-box">
-      <h4>⚠️ Información de Depuración:</h4>
-      <pre><?php 
-        $debugInfo = [
-          'url' => $config['api_url'] ?? 'No configurada',
-          'http_code' => $httpCode,
-          'curl_error' => $curlError ?: 'Ninguno',
-          'connect_time' => $curlInfo['connect_time'] ?? 'N/A',
-          'total_time' => $curlInfo['total_time'] ?? 'N/A',
-          'primary_ip' => $curlInfo['primary_ip'] ?? 'N/A',
-          'response_length' => strlen($response ?? ''),
-          'post_data_received' => !empty($_POST),
-          'post_count' => count($_POST)
-        ];
-        echo htmlspecialchars(json_encode($debugInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); 
-      ?></pre>
-      <p style="margin-top: 10px; font-size: 13px;">
-        <strong>Si el código HTTP es 200 pero el mensaje no llega:</strong><br>
-        • Verifique que el número de teléfono sea válido y esté registrado en WhatsApp<br>
-        • Verifique que la plantilla (internal_id) esté aprobada y activa<br>
-        • Revise la respuesta del servidor arriba para ver si hay mensajes de error específicos<br>
-        • Contacte al soporte de Mercately con el código HTTP y la respuesta completa
-      </p>
+      <pre><?php echo htmlspecialchars(json_encode($datos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
     </div>
     <?php endif; ?>
 
