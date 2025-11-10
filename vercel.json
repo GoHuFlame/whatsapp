@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "*.php": {
+    "api/*.php": {
       "runtime": "vercel-php@0.7.4"
     }
   },
@@ -22,24 +22,26 @@
     },
     {
       "src": "/send.php",
-      "dest": "/send.php"
+      "dest": "/api/send.php"
     },
     {
       "src": "/send_alternative.php",
-      "dest": "/send_alternative.php"
+      "dest": "/api/send_alternative.php"
     },
     {
       "src": "/test_connection.php",
-      "dest": "/test_connection.php"
+      "dest": "/api/test_connection.php"
     },
     {
       "src": "/",
-      "dest": "/index.php"
+      "dest": "/api/index.php"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.php"
+      "dest": "/api/index.php"
     }
   ]
 }
+
+
 
