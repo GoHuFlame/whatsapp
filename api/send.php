@@ -67,12 +67,29 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
     $respuesta = curl_exec($ch);
     $codigoHttp = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $errorCurl = curl_error($ch);
-curl_close($ch);
+    curl_close($ch);
 
     if ($codigoHttp >= 200 && $codigoHttp < 300 && empty($errorCurl)) {
-        $esExitoso = true;
+        $datosRespuesta = json_decode($respuesta, true);
+        if (isset($datosRespuesta['error'])) {
+            $mensajeError = $datosRespuesta['error'];
+            $esExitoso = false;
+        } else {
+            $esExitoso = true;
+        }
     } else {
-        $mensajeError = $errorCurl ?: 'Error al enviar el mensaje';
+        if ($respuesta) {
+            $datosRespuesta = json_decode($respuesta, true);
+            if (isset($datosRespuesta['error'])) {
+                $mensajeError = $datosRespuesta['error'];
+            } elseif (isset($datosRespuesta['message'])) {
+                $mensajeError = $datosRespuesta['message'];
+            } else {
+                $mensajeError = $errorCurl ?: 'Error al enviar el mensaje';
+            }
+        } else {
+            $mensajeError = $errorCurl ?: 'Error al enviar el mensaje';
+        }
     }
     
 } catch (Exception $e) {
