@@ -2,6 +2,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const formulario = document.getElementById('formularioNotificacion');
   const inputTelefono = document.getElementById('telefono');
   
+  if (!formulario || !inputTelefono) {
+    console.error('Elementos del formulario no encontrados');
+    return;
+  }
+  
   inputTelefono.addEventListener('input', function(e) {
     e.target.value = e.target.value.replace(/\D/g, '');
     if (e.target.value.length > 10) {
