@@ -61,37 +61,49 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  verificarParametrosURL();
+});
+
+function verificarParametrosURL() {
   const urlParams = new URLSearchParams(window.location.search);
   const exito = urlParams.get('exito');
   const error = urlParams.get('error');
   
   if (exito === '1') {
-    setTimeout(() => {
-      mostrarToast('Mensaje enviado correctamente', 'exito');
+    mostrarToast('Mensaje enviado correctamente', 'exito');
+    const formulario = document.getElementById('formularioNotificacion');
+    if (formulario) {
       formulario.reset();
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }, 100);
+    }
+    window.history.replaceState({}, document.title, window.location.pathname);
   } else if (error) {
-    setTimeout(() => {
-      mostrarToast(decodeURIComponent(error), 'error');
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }, 100);
+    const mensajeError = decodeURIComponent(error);
+    mostrarToast(mensajeError, 'error');
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
-});
+}
 
 function mostrarToast(mensaje, tipo) {
+  const toastExistente = document.querySelector('.toast');
+  if (toastExistente) {
+    toastExistente.remove();
+  }
+
   const toast = document.createElement('div');
   toast.className = `toast ${tipo}`;
   toast.innerHTML = `
     <span class="toast-icon">${tipo === 'exito' ? '✅' : '❌'}</span>
     <span>${mensaje}</span>
   `;
+  
   document.body.appendChild(toast);
 
   setTimeout(() => {
     toast.classList.add('ocultando');
     setTimeout(() => {
-      toast.remove();
+      if (toast.parentNode) {
+        toast.remove();
+      }
     }, 300);
-  }, 3000);
+  }, 4000);
 }
