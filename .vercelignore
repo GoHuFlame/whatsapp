@@ -1,0 +1,5 @@
+# Archivos que no se deben desplegar en Vercel
+.git
+.gitignore
+.vercel
+*.md
