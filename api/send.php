@@ -79,80 +79,13 @@ if (!isset($_POST['consultory_number']) || empty(trim($_POST['consultory_number'
 }
 $templateParams[] = trim($_POST['consultory_number']);
 
-// Construir estructura de datos según especificaciones
+// Construir estructura de datos EXACTAMENTE igual que test_connection.php que funciona
+// Solo los 3 campos esenciales: phone_number, internal_id, template_params
 $data = [
     "phone_number" => $fullPhone,
     "internal_id" => $config['internal_id'],
     "template_params" => $templateParams
 ];
-
-// Agregar campos opcionales si están presentes
-if (!empty($_POST['media_url'])) {
-    $data["media_url"] = trim($_POST['media_url']);
-}
-
-// Usar el nombre del paciente como first_name
-if (!empty($templateParams[0])) {
-    $data["first_name"] = $templateParams[0];
-}
-
-if (!empty($_POST['last_name'])) {
-    $data["last_name"] = trim($_POST['last_name']);
-}
-
-if (!empty($_POST['email'])) {
-    $data["email"] = trim($_POST['email']);
-}
-
-if (!empty($_POST['address'])) {
-    $data["address"] = trim($_POST['address']);
-}
-
-if (!empty($_POST['city'])) {
-    $data["city"] = trim($_POST['city']);
-}
-
-if (!empty($_POST['state'])) {
-    $data["state"] = trim($_POST['state']);
-}
-
-if (!empty($_POST['zip_code'])) {
-    $data["zip_code"] = trim($_POST['zip_code']);
-}
-
-if (!empty($_POST['notes'])) {
-    $data["notes"] = trim($_POST['notes']);
-}
-
-if (isset($_POST['agent_id']) && $_POST['agent_id'] !== '') {
-    $data["agent_id"] = (int)$_POST['agent_id'];
-}
-
-if (!empty($_POST['funnel_name'])) {
-    $data["funnel_name"] = trim($_POST['funnel_name']);
-}
-
-if (!empty($_POST['stage'])) {
-    $data["stage"] = trim($_POST['stage']);
-}
-
-// Preparar tags (si se necesitan en el futuro)
-$tags = [];
-if (!empty($data["first_name"])) {
-    $tags[] = ["name" => "contacto", "value" => true];
-}
-if (!empty($data["email"])) {
-    $tags[] = ["name" => "email_registrado", "value" => true];
-}
-if (!empty($tags)) {
-    $data["tags"] = $tags;
-}
-
-// Preparar custom_fields (si se necesitan en el futuro)
-// $customFields = [];
-// if (!empty($customFields)) {
-//     $data["custom_fields"] = $customFields;
-// }
 
 // Enviar petición - usando la misma configuración que test_connection.php que funciona
 $ch = curl_init($config['api_url']);
@@ -175,6 +108,14 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curlError = curl_error($ch);
 $curlInfo = curl_getinfo($ch);
 curl_close($ch);
+
+// Debug: Log de respuesta (para ver en Vercel logs)
+error_log("Mercately Send - HTTP Code: " . $httpCode);
+error_log("Mercately Send - Response: " . substr($response ?: 'Sin respuesta', 0, 500));
+if ($curlError) {
+    error_log("Mercately Send - cURL Error: " . $curlError);
+}
+error_log("Mercately Send - Datos enviados: " . json_encode($data));
 
 // Log para depuración (opcional, comentar en producción)
 $debugInfo = [
@@ -336,3 +277,4 @@ $debugInfo = [
   </div>
 </body>
 </html>
+
