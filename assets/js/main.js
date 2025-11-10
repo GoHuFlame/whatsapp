@@ -44,10 +44,14 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
+    // NO prevenir el envío - dejar que el formulario se envíe normalmente
     // Mostrar estado de carga
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="btn-icon">⏳</span> Enviando...';
+    
+    // Permitir que el formulario se envíe normalmente
+    return true;
   });
 
   // Validación en tiempo real para campos requeridos
