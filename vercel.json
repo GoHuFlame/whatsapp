@@ -29,8 +29,8 @@
       "dest": "/api/send.php"
     },
     {
-      "src": "/test_connection.php",
-      "dest": "/api/test_connection.php"
+      "src": "/enviowhats.php",
+      "dest": "/api/enviowhats.php"
     },
     {
       "src": "/",
