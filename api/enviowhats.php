@@ -7,7 +7,7 @@ $configuracion = [
 ];
 
 // ============================================================================
-// SECCIÓN 2: PROCESAMIENTO DEL FORMULARIO (POST)
+// SECCIÓN 2: PROCESAMIENTO DEL FORMULARIO
 // ============================================================================
 
 $mensajeError = '';
