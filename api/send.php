@@ -3,11 +3,8 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Verificar que es una petición POST
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /');
-    exit;
-}
+// NO redirigir si no es POST - mostrar error en la página
+$isPost = $_SERVER['REQUEST_METHOD'] === 'POST';
 
 // Inicializar todas las variables primero
 $config = null;
@@ -25,6 +22,10 @@ $isSuccess = false;
 $phone = '';
 
 try {
+    if (!$isPost) {
+        throw new Exception('Esta página solo acepta peticiones POST. Por favor, use el formulario.');
+    }
+    
     $config = require __DIR__ . '/config.php';
     
     // Validar que la configuración esté completa
@@ -145,6 +146,8 @@ if (!isset($fullPhone) && isset($phone)) {
     $fullPhone = '521' . $phone;
 }
 
+// Forzar salida inmediata para debugging
+header('Content-Type: text/html; charset=utf-8');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -152,7 +155,6 @@ if (!isset($fullPhone) && isset($phone)) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resultado del Envío | Mercately</title>
-  <!-- Debug: Página cargada correctamente -->
   <link rel="stylesheet" href="/assets/css/style.css">
   <style>
     .result-container {
@@ -236,11 +238,22 @@ if (!isset($fullPhone) && isset($phone)) {
 </head>
 <body>
   <div class="result-container">
-    <!-- Debug Info -->
-    <div style="background: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 5px; font-size: 12px;">
-      <strong>Debug:</strong> POST recibido: <?php echo !empty($_POST) ? 'Sí' : 'No'; ?> | 
-      Método: <?php echo $_SERVER['REQUEST_METHOD']; ?> | 
-      Variables POST: <?php echo count($_POST); ?>
+    <!-- Debug Info - SIEMPRE VISIBLE -->
+    <div style="background: #ffeb3b; padding: 15px; margin-bottom: 20px; border-radius: 5px; font-size: 14px; border: 2px solid #f57f17;">
+      <strong>🔍 DEBUG INFO:</strong><br>
+      ✅ Archivo ejecutado: api/send.php<br>
+      POST recibido: <?php echo !empty($_POST) ? '✅ SÍ (' . count($_POST) . ' campos)' : '❌ NO'; ?><br>
+      Método HTTP: <?php echo $_SERVER['REQUEST_METHOD']; ?><br>
+      URL: <?php echo $_SERVER['REQUEST_URI']; ?><br>
+      <?php if (!empty($_POST)): ?>
+        <strong>Campos POST recibidos:</strong> <?php echo implode(', ', array_keys($_POST)); ?><br>
+        <strong>Valores:</strong><br>
+        <?php foreach ($_POST as $key => $value): ?>
+          - <?php echo htmlspecialchars($key); ?>: <?php echo htmlspecialchars(substr($value, 0, 50)); ?><br>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <strong style="color: red;">⚠️ NO SE RECIBIERON DATOS POST</strong>
+      <?php endif; ?>
     </div>
     
     <div class="result-header">
