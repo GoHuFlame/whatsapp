@@ -1,10 +1,8 @@
 <?php
-// Configurar para mostrar errores (solo para debugging)
+// Forzar mostrar errores
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-
-// NO redirigir si no es POST - mostrar error en la página
-$isPost = $_SERVER['REQUEST_METHOD'] === 'POST';
+ini_set('log_errors', 1);
 
 // Inicializar todas las variables primero
 $config = null;
@@ -21,12 +19,25 @@ $responseMessage = '';
 $isSuccess = false;
 $phone = '';
 
+// Verificar método HTTP
+$isPost = $_SERVER['REQUEST_METHOD'] === 'POST';
+
+// Debug: Log inicial
+error_log("=== MERCATELY SEND.PHP EJECUTADO ===");
+error_log("Método: " . $_SERVER['REQUEST_METHOD']);
+error_log("POST recibido: " . (!empty($_POST) ? 'Sí' : 'No'));
+error_log("POST count: " . count($_POST));
+if (!empty($_POST)) {
+    error_log("POST keys: " . implode(', ', array_keys($_POST)));
+}
+
 try {
     if (!$isPost) {
         throw new Exception('Esta página solo acepta peticiones POST. Por favor, use el formulario.');
     }
     
     $config = require __DIR__ . '/config.php';
+    error_log("Config cargado: " . (!empty($config) ? 'Sí' : 'No'));
     
     // Validar que la configuración esté completa
     if (empty($config['api_url']) || empty($config['api_key']) || empty($config['internal_id'])) {
@@ -82,6 +93,8 @@ try {
         "template_params" => $templateParams
     ];
     
+    error_log("Datos a enviar: " . json_encode($data));
+    
     // Enviar petición - configuración idéntica a test_connection.php
     $ch = curl_init($config['api_url']);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -103,6 +116,9 @@ try {
     $curlError = curl_error($ch);
     $curlInfo = curl_getinfo($ch);
     curl_close($ch);
+    
+    error_log("HTTP Code: " . $httpCode);
+    error_log("Response: " . substr($response ?: 'Sin respuesta', 0, 200));
     
     // Parsear respuesta JSON si existe
     if ($response) {
@@ -132,10 +148,12 @@ try {
     $errorMessage = $e->getMessage();
     $showError = true;
     $isSuccess = false;
+    error_log("Exception: " . $errorMessage);
 } catch (Error $e) {
     $errorMessage = 'Error fatal: ' . $e->getMessage();
     $showError = true;
     $isSuccess = false;
+    error_log("Error fatal: " . $errorMessage);
 }
 
 // Asegurar que siempre tengamos valores válidos
@@ -146,7 +164,7 @@ if (!isset($fullPhone) && isset($phone)) {
     $fullPhone = '521' . $phone;
 }
 
-// Forzar salida inmediata para debugging
+// Forzar salida inmediata
 header('Content-Type: text/html; charset=utf-8');
 ?>
 <!DOCTYPE html>
@@ -234,13 +252,21 @@ header('Content-Type: text/html; charset=utf-8');
       border-radius: var(--radius-sm);
       margin-bottom: 20px;
     }
+    .debug-box {
+      background: #ffeb3b;
+      border: 2px solid #f57f17;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
   <div class="result-container">
     <!-- Debug Info - SIEMPRE VISIBLE -->
-    <div style="background: #ffeb3b; padding: 15px; margin-bottom: 20px; border-radius: 5px; font-size: 14px; border: 2px solid #f57f17;">
-      <strong>🔍 DEBUG INFO:</strong><br>
+    <div class="debug-box">
+      <strong>🔍 DEBUG INFO (SIEMPRE VISIBLE):</strong><br>
       ✅ Archivo ejecutado: api/send.php<br>
       POST recibido: <?php echo !empty($_POST) ? '✅ SÍ (' . count($_POST) . ' campos)' : '❌ NO'; ?><br>
       Método HTTP: <?php echo $_SERVER['REQUEST_METHOD']; ?><br>
@@ -252,7 +278,11 @@ header('Content-Type: text/html; charset=utf-8');
           - <?php echo htmlspecialchars($key); ?>: <?php echo htmlspecialchars(substr($value, 0, 50)); ?><br>
         <?php endforeach; ?>
       <?php else: ?>
-        <strong style="color: red;">⚠️ NO SE RECIBIERON DATOS POST</strong>
+        <strong style="color: red;">⚠️ NO SE RECIBIERON DATOS POST - El formulario no se está enviando correctamente</strong><br>
+        <strong>Posibles causas:</strong><br>
+        • El JavaScript está previniendo el envío<br>
+        • La ruta en vercel.json no está configurada correctamente<br>
+        • El formulario no está apuntando a la URL correcta
       <?php endif; ?>
     </div>
     
@@ -335,7 +365,8 @@ header('Content-Type: text/html; charset=utf-8');
           'total_time' => $curlInfo['total_time'] ?? 'N/A',
           'primary_ip' => $curlInfo['primary_ip'] ?? 'N/A',
           'response_length' => strlen($response ?? ''),
-          'post_data_received' => !empty($_POST)
+          'post_data_received' => !empty($_POST),
+          'post_count' => count($_POST)
         ];
         echo htmlspecialchars(json_encode($debugInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); 
       ?></pre>
