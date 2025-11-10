@@ -62,13 +62,20 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('exito') === '1') {
-    mostrarToast('Mensaje enviado correctamente', 'exito');
-    formulario.reset();
-    window.history.replaceState({}, document.title, window.location.pathname);
-  } else if (urlParams.get('error')) {
-    mostrarToast(decodeURIComponent(urlParams.get('error')), 'error');
-    window.history.replaceState({}, document.title, window.location.pathname);
+  const exito = urlParams.get('exito');
+  const error = urlParams.get('error');
+  
+  if (exito === '1') {
+    setTimeout(() => {
+      mostrarToast('Mensaje enviado correctamente', 'exito');
+      formulario.reset();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }, 100);
+  } else if (error) {
+    setTimeout(() => {
+      mostrarToast(decodeURIComponent(error), 'error');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }, 100);
   }
 });
 
