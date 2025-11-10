@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enviar Notificación WhatsApp | Mercately</title>
+  <title>Enviar Notificación WhatsApp</title>
   <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
@@ -15,23 +15,22 @@
         </svg>
       </div>
       <h1>Enviar Notificación WhatsApp</h1>
-      <p class="subtitle">Sistema de envío de mensajes Mercately</p>
+      <p class="subtitle">Sistema de envío de mensajes Wahtsapp</p>
     </div>
 
-    <form id="notificationForm" action="/api/send.php" method="POST" novalidate>
+    <form id="formularioNotificacion" action="/api/send.php" method="POST">
       <div class="form-section">
         <div class="form-group">
-          <label for="phone_number">Número de Teléfono <span class="required">*</span></label>
+          <label for="telefono">Número de Teléfono <span class="required">*</span></label>
           <input 
             type="tel" 
-            id="phone_number" 
+            id="telefono" 
             name="phone_number" 
-            placeholder="5512345678" 
             pattern="\d{10}" 
             maxlength="10"
             required
           >
-          <small class="help-text">Ingrese 10 dígitos sin código de país</small>
+          <small class="help-text">Ingrese 10 dígitos</small>
         </div>
       </div>
 
@@ -46,63 +45,58 @@
         </div>
 
         <div class="form-group">
-          <label for="patient_name">Nombre del Paciente <span class="required">*</span></label>
+          <label for="nombrePaciente">Nombre del Paciente <span class="required">*</span></label>
           <input 
             type="text" 
-            id="patient_name" 
-            name="patient_name" 
-            placeholder="Ej: Juan Pérez"
+            id="nombrePaciente" 
+            name="patient_name"
             required
           >
-          <small class="help-text">Este será el parámetro {{1}} de la plantilla</small>
+          <small class="help-text">Parámetro {{1}} de la plantilla</small>
         </div>
 
         <div class="form-group">
-          <label for="doctor_name">Nombre del Doctor <span class="required">*</span></label>
+          <label for="nombreDoctor">Nombre del Doctor <span class="required">*</span></label>
           <input 
             type="text" 
-            id="doctor_name" 
-            name="doctor_name" 
-            placeholder="Ej: Dra. María López"
+            id="nombreDoctor" 
+            name="doctor_name"
             required
           >
-          <small class="help-text">Este será el parámetro {{2}} de la plantilla</small>
+          <small class="help-text">Parámetro {{2}} de la plantilla</small>
         </div>
 
         <div class="form-group">
-          <label for="appointment_date">Fecha de la Cita <span class="required">*</span></label>
+          <label for="fechaCita">Fecha de la Cita <span class="required">*</span></label>
           <input 
             type="text" 
-            id="appointment_date" 
-            name="appointment_date" 
-            placeholder="Ej: 10 de noviembre"
+            id="fechaCita" 
+            name="appointment_date"
             required
           >
-          <small class="help-text">Este será el parámetro {{3}} de la plantilla</small>
+          <small class="help-text">Parámetro {{3}} de la plantilla</small>
         </div>
 
         <div class="form-group">
-          <label for="appointment_time">Hora de la Cita <span class="required">*</span></label>
+          <label for="horaCita">Hora de la Cita <span class="required">*</span></label>
           <input 
             type="text" 
-            id="appointment_time" 
-            name="appointment_time" 
-            placeholder="Ej: 3:30 PM"
+            id="horaCita" 
+            name="appointment_time"
             required
           >
-          <small class="help-text">Este será el parámetro {{4}} de la plantilla</small>
+          <small class="help-text">Parámetro {{4}} de la plantilla</small>
         </div>
 
         <div class="form-group">
-          <label for="consultory_number">Número de Consultorio <span class="required">*</span></label>
+          <label for="numeroConsultorio">Número de Consultorio <span class="required">*</span></label>
           <input 
             type="text" 
-            id="consultory_number" 
-            name="consultory_number" 
-            placeholder="Ej: Consultorio 5"
+            id="numeroConsultorio" 
+            name="consultory_number"
             required
           >
-          <small class="help-text">Este será el parámetro {{5}} de la plantilla</small>
+          <small class="help-text">Parámetro {{5}} de la plantilla</small>
         </div>
       </div>
 
